@@ -42,8 +42,8 @@ class MainApp extends StatelessWidget {
         // Facturas
         GetPage(name: '/facturas', page: () => const FacturasScreen()),
 
-        // Pagos realizados (placeholder)
-        GetPage(name: '/pagos-realizados', page: () => const PagosScreen()),
+        // Pagos pendientes 
+        GetPage(name: '/pagos-pendientes', page: () => const PagosScreen()),
       ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),

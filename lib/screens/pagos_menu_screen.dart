@@ -31,10 +31,10 @@ class PagosMenuScreen extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 18),
               ),
-              onPressed: () => Get.toNamed('/pagos-realizados'),
+              onPressed: () => Get.toNamed('/pagos-pendientes'),
               icon: const Icon(Icons.payments, size: 26),
               label: const Text(
-                "Pagos Realizados",
+                "Pagos Pendientes",
                 style: TextStyle(fontSize: 16),
               ),
             ),
