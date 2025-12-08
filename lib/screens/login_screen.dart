@@ -19,11 +19,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   late final LoginController controller;
 
-  @override
-  void initState() {
-    super.initState();
-    controller = Get.put(LoginController());
-  }
+@override
+void initState() {
+  super.initState();
+  controller = Get.find<LoginController>(); 
+}
+
 
   @override
   void dispose() {
