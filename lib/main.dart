@@ -9,6 +9,7 @@ import 'package:modulo_mobil/screens/mis_cursos_screen.dart';
 import 'package:modulo_mobil/screens/pagos_screen.dart';
 import 'package:modulo_mobil/screens/pagos_menu_screen.dart';
 import 'package:modulo_mobil/screens/facturas_screen.dart';
+import 'package:modulo_mobil/screens/perfil_screen.dart';
 
 
 void main() {
@@ -44,6 +45,9 @@ class MainApp extends StatelessWidget {
 
         // Pagos pendientes 
         GetPage(name: '/pagos-pendientes', page: () => const PagosScreen()),
+
+        // Perfil 
+        GetPage(name: '/perfil', page: () => PerfilScreen()),
       ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),

@@ -33,7 +33,7 @@ class MainLayout extends StatelessWidget {
         if (currentIndex != 3) Get.toNamed('/pagos');
         break;
       case 4:
-        NotificationService.showInfo('Función próximamente');
+        if (currentIndex != 4) Get.toNamed('/perfil');
         break;
     }
   }

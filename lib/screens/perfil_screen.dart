@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-// Asegúrate de que esta sea la ruta correcta a tu controlador
 import 'package:modulo_mobil/controllers/perfil_usuario_controller.dart'; 
 import 'package:modulo_mobil/widgets/main_layout.dart';
 import 'package:modulo_mobil/services/notification_service.dart'; // Asumo que existe
 
 class PerfilScreen extends StatelessWidget {
   
-  // Usamos Get.find() si el controlador fue inicializado en otro lugar (ej. Bindings)
-  // Pero Get.put() es adecuado si este es el primer lugar donde lo inicializas.
+  // Usamos Get.put() es adecuado si este es el primer lugar donde lo inicializas.
   final PerfilController controller = Get.put(PerfilController());
 
   // Controladores de texto para los campos editables
-  // Se recomienda inicializarlos con valores por defecto o vacíos.
   final TextEditingController direccionCtrl = TextEditingController();
   final TextEditingController telefonoCtrl = TextEditingController();
 
@@ -83,11 +80,8 @@ class PerfilScreen extends StatelessWidget {
         final perfil = controller.perfilUsuario.value!;
         
         // ******************************************************
-        // IMPORTANTE: Sincronizar los controladores de texto SOLO 
-        // cuando el perfil cambie o se cargue inicialmente.
-        // GetX gestiona este cambio, pero debemos evitar sobrescribir
-        // la entrada del usuario constantemente. Usamos un condicional
-        // para solo inicializar si están vacíos.
+        // Sincronizar los controladores de texto SOLO 
+        // si están vacíos para evitar perder la edición del usuario.
         if (direccionCtrl.text.isEmpty && perfil.direccion.isNotEmpty) {
           direccionCtrl.text = perfil.direccion;
         }
@@ -126,27 +120,46 @@ class PerfilScreen extends StatelessWidget {
               // --- Botón de Guardar ---
               ElevatedButton.icon(
                 onPressed: canSave ? () async {
-                  // Validación simple de no vacíos (puedes agregar más)
+                  
+                  // Validación simple de no vacíos
                   if (direccionCtrl.text.isEmpty || telefonoCtrl.text.isEmpty) {
                       NotificationService.showError("Dirección y Teléfono no pueden estar vacíos.");
                       return;
                   }
                   
-                  // Llamada al método de actualización
+                  // ******************************************************
+                  // *** LÓGICA DE CONFIRMACIÓN DE CAMBIOS ***
+                  // ******************************************************
+                  final confirmed = await NotificationService.showConfirmDialog(
+                    title: 'Confirmar Actualización',
+                    message: '¿Desea guardar los cambios en su dirección y teléfono?',
+                    confirmText: 'Guardar',
+                    cancelText: 'Cancelar',
+                  );
+
+                  if (!confirmed) {
+                    NotificationService.showInfo('Actualización cancelada.');
+                    return; // Sale si el usuario cancela
+                  }
+                  
+                  // ******************************************************
+                  // *** LLAMADA AL CONTROLADOR SI SE CONFIRMÓ ***
+                  // ******************************************************
+                  
                   final ok = await controller.actualizarPerfil(
                     nuevaDireccion: direccionCtrl.text,
                     nuevoTelefono: telefonoCtrl.text,
                   );
 
-                  // Mostrar notificaciones usando el servicio (ya que el controller solo usa Get.snackbar)
-                  // Esto se ejecuta solo si la actualización fue manejada correctamente por el controller/service
+                  // Mostrar notificaciones usando el servicio
                   if (ok) {
                     NotificationService.showSuccess("Perfil actualizado correctamente");
                   } else {
-                    // Si falla, el controlador ya debería haber mostrado un Get.snackbar de error, 
-                    // pero podemos mostrar un fallback si es necesario.
-                    // NotificationService.showError("Error al actualizar perfil");
+                    // El controlador ya debería manejar el error de la API, 
+                    // pero dejamos este bloque por si acaso.
+                    // NotificationService.showError("Error al actualizar perfil"); 
                   }
+                  
                 } : null, // Deshabilita si está guardando
                 
                 icon: isSaving 
