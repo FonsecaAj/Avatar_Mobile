@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:modulo_mobil/widgets/main_layout.dart';
 import 'package:modulo_mobil/controllers/prematricula_controller.dart';
+import 'package:modulo_mobil/screens/nueva_prematricula_screen.dart';
 
 class PrematriculaScreen extends StatelessWidget {
   const PrematriculaScreen({super.key});
@@ -14,6 +15,18 @@ class PrematriculaScreen extends StatelessWidget {
     return MainLayout(
       title: "Prematrícula",
       currentIndex: 1,
+      // Agrega el FloatingActionButton
+      floatingActionButton: FloatingActionButton.extended( // <--- Nuevo botón
+        onPressed: () {
+          // Navega a la nueva pantalla usando Get.to
+          Get.to(() => const NuevaPrematriculaScreen()); 
+        },
+        icon: const Icon(Icons.add),
+        label: const Text("Nueva Prematrícula"),
+        // Estilo para que siga el diseño de tu app
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
+      ),
       child: Obx(() {
         if (controller.cargando.value) {
           return const Center(child: CircularProgressIndicator());

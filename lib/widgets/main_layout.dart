@@ -8,6 +8,7 @@ class MainLayout extends StatelessWidget {
   final Widget child;
   final String title;
   final int currentIndex;
+  final Widget? floatingActionButton; // Ya estaba definido en la pregunta
 
 
   const MainLayout({
@@ -15,6 +16,7 @@ class MainLayout extends StatelessWidget {
     required this.child,
     required this.title,
     this.currentIndex = 0,
+    this.floatingActionButton, // Ya estaba incluido en el constructor
   });
 
 
@@ -41,12 +43,16 @@ class MainLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Asegurarse de que el controlador de login esté disponible en GetX
+    // Nota: Si Get.find() falla, es posible que debas hacer Get.put() en tu widget raíz (main.dart)
     final loginController = Get.find<LoginController>();
 
 
     return Scaffold(
       appBar: _buildAppBar(loginController),
       body: child,
+      // *** CAMBIO CLAVE: Pasar la propiedad floatingActionButton al Scaffold ***
+      floatingActionButton: floatingActionButton, 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: _onTabTapped,

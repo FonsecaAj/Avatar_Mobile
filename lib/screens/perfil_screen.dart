@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:modulo_mobil/controllers/perfil_usuario_controller.dart'; 
+import 'package:modulo_mobil/controllers/perfil_usuario_controller.dart';
+import 'package:modulo_mobil/controllers/direcciones_controller.dart';
+import 'package:modulo_mobil/models/direcciones_response.dart';
 import 'package:modulo_mobil/widgets/main_layout.dart';
-import 'package:modulo_mobil/services/notification_service.dart'; // Asumo que existe
+import 'package:modulo_mobil/services/notification_service.dart';
+
 
 class PerfilScreen extends StatelessWidget {
   
-  // Usamos Get.put() es adecuado si este es el primer lugar donde lo inicializas.
   final PerfilController controller = Get.put(PerfilController());
+  final DireccionesController direccionesController = Get.put(DireccionesController());
 
-  // Controladores de texto para los campos editables
-  final TextEditingController direccionCtrl = TextEditingController();
   final TextEditingController telefonoCtrl = TextEditingController();
 
   PerfilScreen({super.key});
@@ -24,10 +25,8 @@ class PerfilScreen extends StatelessWidget {
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-          // Se usa para mostrar el valor de forma estática
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
-        // IMPORTANTE: Crear un nuevo TextEditingController solo para lectura
         controller: TextEditingController(text: value),
       ),
     );
@@ -43,16 +42,130 @@ class PerfilScreen extends StatelessWidget {
           border: const OutlineInputBorder(),
         ),
         controller: ctrl,
-        keyboardType: label == "Teléfono" ? TextInputType.phone : TextInputType.streetAddress,
+        keyboardType: TextInputType.phone,
       ),
     );
+  }
+
+  // Widget para dropdown de Provincia
+  Widget _dropdownProvincia() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Obx(() {
+        if (direccionesController.cargandoProvincias.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return DropdownButtonFormField<Provincia>(
+          decoration: const InputDecoration(
+            labelText: "Provincia",
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          value: direccionesController.provinciaSeleccionada.value,
+          items: direccionesController.provincias.map((provincia) {
+            return DropdownMenuItem<Provincia>(
+              value: provincia,
+              child: Text(provincia.nombreProvincia),
+            );
+          }).toList(),
+          onChanged: (Provincia? value) {
+            direccionesController.seleccionarProvincia(value);
+          },
+        );
+      }),
+    );
+  }
+
+  // Widget para dropdown de Cantón
+  Widget _dropdownCanton() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Obx(() {
+        if (direccionesController.cargandoCantones.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final habilitado = direccionesController.provinciaSeleccionada.value != null;
+
+        return DropdownButtonFormField<Canton>(
+          decoration: const InputDecoration(
+            labelText: "Cantón",
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          value: direccionesController.cantonSeleccionado.value,
+          items: habilitado
+              ? direccionesController.cantones.map((canton) {
+                  return DropdownMenuItem<Canton>(
+                    value: canton,
+                    child: Text(canton.nombreCanton),
+                  );
+                }).toList()
+              : [],
+          onChanged: habilitado
+              ? (Canton? value) {
+                  direccionesController.seleccionarCanton(value);
+                }
+              : null,
+        );
+      }),
+    );
+  }
+
+  // Widget para dropdown de Distrito
+  Widget _dropdownDistrito() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Obx(() {
+        if (direccionesController.cargandoDistritos.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final habilitado = direccionesController.cantonSeleccionado.value != null;
+
+        return DropdownButtonFormField<Distrito>(
+          decoration: const InputDecoration(
+            labelText: "Distrito",
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          value: direccionesController.distritoSeleccionado.value,
+          items: habilitado
+              ? direccionesController.distritos.map((distrito) {
+                  return DropdownMenuItem<Distrito>(
+                    value: distrito,
+                    child: Text(distrito.nombreDistrito),
+                  );
+                }).toList()
+              : [],
+          onChanged: habilitado
+              ? (Distrito? value) {
+                  direccionesController.seleccionarDistrito(value);
+                }
+              : null,
+        );
+      }),
+    );
+  }
+
+  // Método para obtener la dirección completa como string
+  String _obtenerDireccionCompleta() {
+    final provincia = direccionesController.provinciaSeleccionada.value;
+    final canton = direccionesController.cantonSeleccionado.value;
+    final distrito = direccionesController.distritoSeleccionado.value;
+
+    if (provincia != null && canton != null && distrito != null) {
+      return "${provincia.nombreProvincia}, ${canton.nombreCanton}, ${distrito.nombreDistrito}";
+    }
+    return "";
   }
 
   @override
   Widget build(BuildContext context) {
     return MainLayout(
       title: "Mi Perfil",
-      currentIndex: 4, // Asumiendo que es el índice 4 en tu navegación
+      currentIndex: 4,
       child: Obx(() {
         // --- 1. Estado de Carga Inicial ---
         if (controller.cargando.value && controller.perfilUsuario.value == null) {
@@ -79,17 +192,9 @@ class PerfilScreen extends StatelessWidget {
         // --- 3. Perfil Cargado Correctamente ---
         final perfil = controller.perfilUsuario.value!;
         
-        // ******************************************************
-        // Sincronizar los controladores de texto SOLO 
-        // si están vacíos para evitar perder la edición del usuario.
-        if (direccionCtrl.text.isEmpty && perfil.direccion.isNotEmpty) {
-          direccionCtrl.text = perfil.direccion;
-        }
         if (telefonoCtrl.text.isEmpty && perfil.telefono.isNotEmpty) {
           telefonoCtrl.text = perfil.telefono;
         }
-        // ******************************************************
-
 
         // Determina si el botón debe estar deshabilitado
         final bool isSaving = controller.actualizando.value;
@@ -112,7 +217,11 @@ class PerfilScreen extends StatelessWidget {
               Text("Información de Contacto", style: Get.textTheme.titleMedium),
               const SizedBox(height: 10),
               
-              _editable("Dirección", direccionCtrl),
+              // --- Selector de Dirección en Cascada ---
+              _dropdownProvincia(),
+              _dropdownCanton(),
+              _dropdownDistrito(),
+              
               _editable("Teléfono", telefonoCtrl),
 
               const SizedBox(height: 30),
@@ -121,15 +230,20 @@ class PerfilScreen extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: canSave ? () async {
                   
-                  // Validación simple de no vacíos
-                  if (direccionCtrl.text.isEmpty || telefonoCtrl.text.isEmpty) {
-                      NotificationService.showError("Dirección y Teléfono no pueden estar vacíos.");
-                      return;
+                  final direccionCompleta = _obtenerDireccionCompleta();
+                  
+                  // Validación
+                  if (direccionCompleta.isEmpty) {
+                    NotificationService.showError("Debe seleccionar Provincia, Cantón y Distrito.");
+                    return;
                   }
                   
-                  // ******************************************************
-                  // *** LÓGICA DE CONFIRMACIÓN DE CAMBIOS ***
-                  // ******************************************************
+                  if (telefonoCtrl.text.isEmpty) {
+                    NotificationService.showError("El Teléfono no puede estar vacío.");
+                    return;
+                  }
+                  
+                  // Confirmación
                   final confirmed = await NotificationService.showConfirmDialog(
                     title: 'Confirmar Actualización',
                     message: '¿Desea guardar los cambios en su dirección y teléfono?',
@@ -139,28 +253,20 @@ class PerfilScreen extends StatelessWidget {
 
                   if (!confirmed) {
                     NotificationService.showInfo('Actualización cancelada.');
-                    return; // Sale si el usuario cancela
+                    return;
                   }
                   
-                  // ******************************************************
-                  // *** LLAMADA AL CONTROLADOR SI SE CONFIRMÓ ***
-                  // ******************************************************
-                  
+                  // Llamada al controlador con la dirección completa
                   final ok = await controller.actualizarPerfil(
-                    nuevaDireccion: direccionCtrl.text,
+                    nuevaDireccion: direccionCompleta,
                     nuevoTelefono: telefonoCtrl.text,
                   );
 
-                  // Mostrar notificaciones usando el servicio
                   if (ok) {
                     NotificationService.showSuccess("Perfil actualizado correctamente");
-                  } else {
-                    // El controlador ya debería manejar el error de la API, 
-                    // pero dejamos este bloque por si acaso.
-                    // NotificationService.showError("Error al actualizar perfil"); 
                   }
                   
-                } : null, // Deshabilita si está guardando
+                } : null,
                 
                 icon: isSaving 
                     ? const SizedBox(
