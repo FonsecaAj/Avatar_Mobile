@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 // Clase que representa un único curso/registro dentro de la matrícula.
 class MatriculaResponse {
   final String carreraEstudiante;
@@ -24,10 +22,10 @@ class MatriculaResponse {
       // Usamos el operador '??' para asegurar que si el valor es null, usemos una cadena vacía o un valor por defecto.
       // Note que la clave 'carrera_Estudiante' se convierte a camelCase en la propiedad de Dart.
       carreraEstudiante: json['carrera_Estudiante'] as String? ?? '',
-      
+
       // Convertimos la cadena de fecha a un objeto DateTime
       fechaMatricula: DateTime.parse(json['fecha_Matricula'] as String),
-      
+
       nombreGrupo: json['nombre_Grupo'] as String? ?? '',
       nombreCurso: json['nombre_Curso'] as String? ?? '',
       codigoCurso: json['codigo_Curso'] as String? ?? '',
