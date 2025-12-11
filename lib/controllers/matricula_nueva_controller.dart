@@ -13,13 +13,11 @@ class MatriculaNuevaController extends GetxController {
   final cargando = false.obs;
   final error = ''.obs;
 
-  // listas de lookups
   final periodos = <PeriodoMatricula>[].obs;
   final cursos = <CursoMatricula>[].obs;
   final gruposTodos = <GrupoMatricula>[].obs;
   final gruposFiltrados = <GrupoMatricula>[].obs;
 
-  // selección actual
   final periodoSeleccionado = Rx<PeriodoMatricula?>(null);
   final cursoSeleccionado = Rx<CursoMatricula?>(null);
   final grupoSeleccionado = Rx<GrupoMatricula?>(null);
@@ -55,7 +53,6 @@ class MatriculaNuevaController extends GetxController {
       cursos.assignAll(lookups.cursos);
       gruposTodos.assignAll(lookups.grupos);
 
-      // seleccionar automáticamente el periodo activo si viene marcado
       final activo = lookups.periodos.firstWhere(
         (p) => p.esActivo,
         orElse: () => lookups.periodos.isNotEmpty
@@ -71,7 +68,7 @@ class MatriculaNuevaController extends GetxController {
         periodoSeleccionado.value = activo;
       }
 
-      _filtrarGrupos();
+      _refrescarGrupos();
     } catch (e) {
       error.value = 'Error cargando lookups: $e';
     } finally {
@@ -81,38 +78,49 @@ class MatriculaNuevaController extends GetxController {
 
   void seleccionarPeriodo(PeriodoMatricula periodo) {
     periodoSeleccionado.value = periodo;
-    _filtrarGrupos();
+    _refrescarGrupos();
   }
 
   void seleccionarCurso(CursoMatricula curso) {
     cursoSeleccionado.value = curso;
-    _filtrarGrupos();
+    _refrescarGrupos();
   }
 
   void seleccionarGrupo(GrupoMatricula grupo) {
     grupoSeleccionado.value = grupo;
   }
 
-  void _filtrarGrupos() {
-    if (cursoSeleccionado.value == null || periodoSeleccionado.value == null) {
+  void _refrescarGrupos() {
+    final curso = cursoSeleccionado.value;
+    final periodo = periodoSeleccionado.value;
+
+    if (curso == null) {
       gruposFiltrados.clear();
+      print('REFRESCAR GRUPOS: sin curso seleccionado');
       return;
     }
 
-    final idCurso = cursoSeleccionado.value!.idCurso;
-    final idPeriodo = periodoSeleccionado.value!.idPeriodo;
+    var gruposCurso = gruposTodos
+        .where((g) => g.idCurso == curso.idCurso)
+        .toList();
 
-    gruposFiltrados.assignAll(
-      gruposTodos.where(
-        (g) => g.idCurso == idCurso && g.idPeriodo == idPeriodo,
-      ),
-    );
-
-    if (!gruposFiltrados.contains(grupoSeleccionado.value)) {
-      grupoSeleccionado.value = null;
+    if (periodo != null && gruposCurso.any((g) => g.idPeriodo != 0)) {
+      gruposCurso = gruposCurso
+          .where((g) => g.idPeriodo == periodo.idPeriodo)
+          .toList();
     }
+
+    gruposFiltrados.assignAll(gruposCurso);
+
+    print(
+      'REFRESCAR GRUPOS: '
+      'curso=${curso.idCurso}, '
+      'periodo=${periodo?.idPeriodo}, '
+      'gruposFiltrados=${gruposCurso.length}',
+    );
   }
 
+  // ================== Confirmar matrícula ==================
   Future<bool> confirmarMatricula() async {
     if (_identificacion.isEmpty) {
       error.value = 'No se pudo obtener la identificación del usuario.';
@@ -121,7 +129,7 @@ class MatriculaNuevaController extends GetxController {
     if (cursoSeleccionado.value == null ||
         grupoSeleccionado.value == null ||
         periodoSeleccionado.value == null) {
-      error.value = 'Debes seleccionar curso, grupo y periodo.';
+      error.value = 'Debes seleccionar curso, grupo y período.';
       return false;
     }
 
@@ -135,13 +143,20 @@ class MatriculaNuevaController extends GetxController {
       idPeriodo: periodoSeleccionado.value!.idPeriodo,
     );
 
-    final ok = await _service.crearMatricula(request);
+    print(
+      'DEBUG MATRICULA SELECCIONADA => identificacion=$_identificacion, curso=${request.idCurso}, grupo=${request.idGrupo}, periodo=${request.idPeriodo}',
+    );
 
-    if (!ok) {
-      error.value = 'No se pudo completar la matrícula.';
+    try {
+      await _service.crearMatricula(request); // lanza Exception si falla
+      return true;
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      error.value = msg;
+      print('ERROR confirmarMatricula: $msg');
+      return false;
+    } finally {
+      cargando.value = false;
     }
-
-    cargando.value = false;
-    return ok;
   }
 }

@@ -10,15 +10,23 @@ class MatriculaNuevaScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(MatriculaNuevaController());
 
+    // Colores de tu layout principal
+    const primaryBlue = Color(0xFF2F496E);
+    const accentGold = Color(0xFFC3A38E);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Matricularme')),
+      appBar: AppBar(
+        backgroundColor: primaryBlue,
+        title: const Text(
+          'Matricularme',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      backgroundColor: const Color(0xFFF3F4F6),
       body: Obx(() {
         if (controller.cargando.value) {
           return const Center(child: CircularProgressIndicator());
-        }
-
-        if (controller.error.isNotEmpty) {
-          return Center(child: Text(controller.error.value));
         }
 
         return Padding(
@@ -26,9 +34,50 @@ class MatriculaNuevaScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (controller.error.isNotEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE5E5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFDC3545)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.error_outline, color: Color(0xFFDC3545)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          controller.error.value,
+                          style: const TextStyle(
+                            color: Color(0xFF8B1A1A),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Debug visual opcional
+              Text(
+                'Periodos: ${controller.periodos.length}  ·  '
+                'Cursos: ${controller.cursos.length}  ·  '
+                'Grupos filtrados: ${controller.gruposFiltrados.length}',
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+
               const Text(
                 'Periodo',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: primaryBlue,
+                ),
               ),
               DropdownButton<PeriodoMatricula>(
                 value: controller.periodoSeleccionado.value,
@@ -50,7 +99,10 @@ class MatriculaNuevaScreen extends StatelessWidget {
 
               const Text(
                 'Curso',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: primaryBlue,
+                ),
               ),
               DropdownButton<CursoMatricula>(
                 value: controller.cursoSeleccionado.value,
@@ -60,7 +112,11 @@ class MatriculaNuevaScreen extends StatelessWidget {
                     .map(
                       (c) => DropdownMenuItem<CursoMatricula>(
                         value: c,
-                        child: Text('${c.codigo} - ${c.nombre}'),
+                        child: Text(
+                          c.nombre.isNotEmpty
+                              ? '${c.codigo} - ${c.nombre}'
+                              : c.codigo,
+                        ),
                       ),
                     )
                     .toList(),
@@ -72,7 +128,10 @@ class MatriculaNuevaScreen extends StatelessWidget {
 
               const Text(
                 'Grupo',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: primaryBlue,
+                ),
               ),
               DropdownButton<GrupoMatricula>(
                 value: controller.grupoSeleccionado.value,
@@ -83,7 +142,8 @@ class MatriculaNuevaScreen extends StatelessWidget {
                       (g) => DropdownMenuItem<GrupoMatricula>(
                         value: g,
                         child: Text(
-                          '${g.nombreGrupo} · ${g.horario ?? ''} ${g.profesor != null ? '· ${g.profesor}' : ''}',
+                          '${g.nombreGrupo} · ${g.nombreCurso} · '
+                          'Cupo: ${g.cupoDisponible}/${g.cupoMaximo}',
                         ),
                       ),
                     )
@@ -93,33 +153,129 @@ class MatriculaNuevaScreen extends StatelessWidget {
                 },
               ),
 
+              const SizedBox(height: 20),
+
+              // Resumen de selección
+              Builder(
+                builder: (_) {
+                  final cursoSel = controller.cursoSeleccionado.value;
+                  final grupoSel = controller.grupoSeleccionado.value;
+                  final periodoSel = controller.periodoSeleccionado.value;
+
+                  if (cursoSel == null ||
+                      grupoSel == null ||
+                      periodoSel == null) {
+                    return const SizedBox();
+                  }
+
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: primaryBlue.withOpacity(0.2)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          color: primaryBlue,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Matrícula seleccionada',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: primaryBlue,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Curso: ${cursoSel.codigo} - ${cursoSel.nombre}',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                              Text(
+                                'Grupo: ${grupoSel.nombreGrupo}',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                              Text(
+                                'Período: ${periodoSel.descripcion}',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
               const Spacer(),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.check),
                   label: const Text('Confirmar matrícula'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
                   onPressed: () async {
                     final ok = await controller.confirmarMatricula();
 
                     if (ok) {
+                      Get.offAllNamed('/matricula');
+
+                      // Snackbar de éxito
                       Get.snackbar(
                         'Matrícula exitosa',
                         'Se registró la matrícula correctamente.',
                         snackPosition: SnackPosition.BOTTOM,
+                        backgroundColor: primaryBlue,
+                        colorText: Colors.white,
+                        margin: const EdgeInsets.all(16),
+                        borderRadius: 12,
+                        icon: const Icon(Icons.check_circle, color: accentGold),
                       );
-
-                      Get.back(result: true);
                     } else {
-                      // opcional: mostrar mensaje si el controller puso error
-                      if (controller.error.isNotEmpty) {
-                        Get.snackbar(
-                          'Error',
-                          controller.error.value,
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: Colors.red[200],
-                        );
-                      }
+                      // Mostrar el motivo exacto del error
+                      final msg = controller.error.value.isNotEmpty
+                          ? controller.error.value
+                          : 'No se pudo completar la matrícula.';
+                      Get.snackbar(
+                        'Error al matricular',
+                        msg,
+                        snackPosition: SnackPosition.BOTTOM,
+                        backgroundColor: Colors.red.shade700,
+                        colorText: Colors.white,
+                        margin: const EdgeInsets.all(16),
+                        borderRadius: 12,
+                        icon: const Icon(
+                          Icons.error_outline,
+                          color: Colors.white,
+                        ),
+                      );
                     }
                   },
                 ),
