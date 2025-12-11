@@ -6,7 +6,10 @@ import 'package:modulo_mobil/services/loginService.dart';
 class DireccionesService {
   final client = http.Client();
   final loginService = LoginApiService();
-  final String baseUrl = "https://tiusr20pl.cuc-carrera-ti.ac.cr/API_DIRECCIONES/api";
+
+  // Base del API Gateway para direcciones
+  final String baseUrl =
+      "https://tiusr20pl.cuc-carrera-ti.ac.cr/gateway/api/direcciones";
 
   Future<Map<String, String>> _headers() async {
     final token = await loginService.obtenerAccessToken();
@@ -61,7 +64,8 @@ class DireccionesService {
 
   Future<List<Distrito>> obtenerDistritos(int idProvincia, int idCanton) async {
     try {
-      final url = Uri.parse("$baseUrl/distritos?provincia=$idProvincia&canton=$idCanton");
+      final url = Uri.parse(
+          "$baseUrl/distritos?provincia=$idProvincia&canton=$idCanton");
       final resp = await client.get(url, headers: await _headers());
 
       if (resp.statusCode != 200) {

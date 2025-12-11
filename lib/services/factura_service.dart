@@ -7,8 +7,10 @@ class FacturaService {
   final client = http.Client();
   final loginService = LoginApiService();
 
+  // Antes: https://tiusr20pl.cuc-carrera-ti.ac.cr/admfacturacion/api
+  // Ahora pasamos por el gateway
   final String baseUrl =
-      "https://tiusr20pl.cuc-carrera-ti.ac.cr/admfacturacion/api";
+      "https://tiusr20pl.cuc-carrera-ti.ac.cr/gateway/admfacturacion/api";
 
   Future<List<Factura>?> obtenerFacturas(String cedula) async {
     try {

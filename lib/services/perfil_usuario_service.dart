@@ -3,28 +3,26 @@ import 'package:http/http.dart' as http;
 import 'package:modulo_mobil/models/perfil_usuario.dart';
 import 'package:modulo_mobil/services/loginService.dart';
 
-
 class PerfilApiService {
   final client = http.Client();
-  final loginService = LoginApiService(); // Asume que este servicio existe y funciona
+  final loginService = LoginApiService();
 
-  // URL base proporcionada
-  static const String _baseUrl = 'https://tiusr20pl.cuc-carrera-ti.ac.cr/perfilusuario';
+  // Antes: https://tiusr20pl.cuc-carrera-ti.ac.cr/perfilusuario
+  // Ahora: base del API Gateway para perfil
+  static const String _baseUrl =
+      'https://tiusr20pl.cuc-carrera-ti.ac.cr/gateway/api/perfil';
 
   // --- 1. Endpoint: Cargar Perfil de Usuario ---
-  
-  // URL: https://tiusr20pl.cuc-carrera-ti.ac.cr/perfilusuario/api/perfil/mobile?email=jocs%40cuc.cr
   Future<PerfilUsuario?> obtenerPerfil(String email) async {
     // 1. Obtener el token de acceso
     final token = await loginService.obtenerAccessToken();
-    
+
     // Codificar el email para la URL
-    final encodedEmail = Uri.encodeComponent(email); 
+    final encodedEmail = Uri.encodeComponent(email);
 
     // 2. Construir la URL completa para obtener el perfil
-    final url = Uri.parse(
-      "$_baseUrl/api/perfil/mobile?email=$encodedEmail",
-    );
+    // Coincide con UpstreamPathTemplate: /api/perfil/mobile
+    final url = Uri.parse("$_baseUrl/mobile?email=$encodedEmail");
 
     try {
       // 3. Realizar la solicitud GET
@@ -41,12 +39,11 @@ class PerfilApiService {
 
       // 5. Verificar el código de estado y el responseObject
       if (resp.statusCode == 200 && jsonResp["responseObject"] != null) {
-        
-        // Usamos el fromJson de PerfilUsuario sobre el responseObject
-        return PerfilUsuario.fromJson(jsonResp["responseObject"] as Map<String, dynamic>);
+        return PerfilUsuario.fromJson(
+            jsonResp["responseObject"] as Map<String, dynamic>);
       } else {
-        // Manejar errores de API o token no válido
-        print('Error al cargar perfil. Status: ${resp.statusCode}, Mensaje: ${jsonResp["message"]}');
+        print(
+            'Error al cargar perfil. Status: ${resp.statusCode}, Mensaje: ${jsonResp["message"]}');
         return null;
       }
     } catch (e) {
@@ -56,18 +53,17 @@ class PerfilApiService {
   }
 
   // --- 2. Endpoint: Actualizar Perfil de Usuario ---
-
-  // URL: https://tiusr20pl.cuc-carrera-ti.ac.cr/perfilusuario/api/perfil/mobile/editar
   Future<bool> actualizarPerfil({
-    required String email, 
-    required String direccion, 
+    required String email,
+    required String direccion,
     required String telefono,
   }) async {
     // 1. Obtener el token de acceso
     final token = await loginService.obtenerAccessToken();
 
     // 2. Construir la URL completa para la edición
-    final url = Uri.parse("$_baseUrl/api/perfil/mobile/editar");
+    // Coincide con UpstreamPathTemplate: /api/perfil/mobile/editar
+    final url = Uri.parse("$_baseUrl/mobile/editar");
 
     // 3. Crear el body de la solicitud (tal como lo requiere la API)
     final body = jsonEncode({
@@ -75,10 +71,10 @@ class PerfilApiService {
       "direccion": direccion,
       "telefono": telefono,
     });
-    
+
     try {
-      // 4. Realizar la solicitud PUT (asumiendo que la edición es PUT o POST)
-      final resp = await client.put( // Se usa PUT o POST para edición, asumo PUT o revisa la doc.
+      // 4. Realizar la solicitud PUT
+      final resp = await client.put(
         url,
         headers: {
           "Authorization": "Bearer $token",
@@ -89,13 +85,11 @@ class PerfilApiService {
 
       // 5. Verificar el código de estado
       if (resp.statusCode == 200) {
-        // Puedes opcionalmente decodificar y revisar el mensaje si el API lo proporciona
-        // final jsonResp = jsonDecode(resp.body);
-        // print('Actualización exitosa: ${jsonResp["message"]}');
         return true;
       } else {
         final jsonResp = jsonDecode(resp.body);
-        print('Error al actualizar perfil. Status: ${resp.statusCode}, Mensaje: ${jsonResp["message"]}');
+        print(
+            'Error al actualizar perfil. Status: ${resp.statusCode}, Mensaje: ${jsonResp["message"]}');
         return false;
       }
     } catch (e) {
