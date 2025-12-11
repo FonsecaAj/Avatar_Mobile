@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:modulo_mobil/controllers/LoginController.dart';
 import 'package:modulo_mobil/models/nueva_prematricula_response.dart';
+import 'package:modulo_mobil/models/prematricula_response.dart';
 import 'package:modulo_mobil/services/prematricula_service.dart';
+import 'package:modulo_mobil/controllers/notificaciones_correo_controller.dart';
 import 'package:modulo_mobil/widgets/main_layout.dart';
 
 // ----------------------------------------------------------------------
 // 1. CONTROLADOR (Lógica de la Nueva Prematrícula)
 // ----------------------------------------------------------------------
 class NuevaPrematriculaController extends GetxController {
-  // Servicio de prematrícula + login
+  // Servicios
   final PrematriculaService prematriculaService = PrematriculaService();
   final LoginController loginController = Get.find<LoginController>();
+  final NotificacionesController notificacionesController =
+      Get.put(NotificacionesController());
 
   // Datos de prueba para los Dropdowns (por ahora solo nombres)
   final List<String> carreras = [
@@ -44,6 +48,7 @@ class NuevaPrematriculaController extends GetxController {
   var cursoSeleccionado = Rxn<String>();
   final periodoController = TextEditingController();
   final observacionesController = TextEditingController();
+  final emailNotificacionController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
   // Estado de envío (loading del botón)
@@ -54,12 +59,35 @@ class NuevaPrematriculaController extends GetxController {
     cursoSeleccionado.value = null;
     periodoController.clear();
     observacionesController.clear();
+    emailNotificacionController.clear();
   }
 
   // Lógica para actualizar los cursos cuando cambia la carrera
   void actualizarCurso(String? nuevaCarrera) {
     carreraSeleccionada.value = nuevaCarrera;
     cursoSeleccionado.value = null; // Resetear el curso al cambiar la carrera
+  }
+
+  String _construirMensajeResumen({
+    required String nombreEstudiante,
+    required String carrera,
+    required String curso,
+    required String periodo,
+    required String observaciones,
+  }) {
+    final obs = observaciones.isEmpty ? 'N/A' : observaciones;
+    return '''
+Estimado/a $nombreEstudiante,
+
+Su prematrícula se ha realizado con éxito con los siguientes datos:
+
+- Carrera: $carrera
+- Curso: $curso
+- Período: $periodo
+- Observaciones: $obs
+
+Gracias por utilizar el sistema de prematrícula.
+''';
   }
 
   // Enviar prematrícula al backend
@@ -75,6 +103,19 @@ class NuevaPrematriculaController extends GetxController {
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    // Validar email de notificación
+    final emailDestino = emailNotificacionController.text.trim();
+    if (emailDestino.isEmpty || !emailDestino.contains('@')) {
+      Get.snackbar(
+        'Error',
+        'Debes ingresar un correo de notificación válido.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
       );
       return;
     }
@@ -134,29 +175,19 @@ class NuevaPrematriculaController extends GetxController {
     }
 
     final request = PrematriculaRequest(
-      idPrematricula: 0,          // siempre 0 al crear
+      idPrematricula: 0, // siempre 0 al crear
       idEstudiante: idEstudiante, // iD_Estudiante
-      idCarrera: idCarrera,       // iD_Carrera
-      idCurso: idCurso,           // iD_Curso
+      idCarrera: idCarrera, // iD_Carrera
+      idCurso: idCurso, // iD_Curso
       observaciones: observacionesController.text.trim(),
-      idPeriodo: idPeriodo,       // iD_Periodo
+      idPeriodo: idPeriodo, // iD_Periodo
     );
 
     enviando.value = true;
     final ok = await prematriculaService.crearPrematricula(request);
-    enviando.value = false;
 
-    if (ok) {
-      Get.snackbar(
-        '✅ Solicitud Enviada',
-        'Tu solicitud de pre-matrícula para $curso ha sido registrada con éxito.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade600,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
-      limpiarFormulario();
-    } else {
+    if (!ok) {
+      enviando.value = false;
       Get.snackbar(
         '❌ Error',
         'No se pudo registrar la pre-matrícula. Inténtalo de nuevo más tarde.',
@@ -165,7 +196,47 @@ class NuevaPrematriculaController extends GetxController {
         colorText: Colors.white,
         duration: const Duration(seconds: 3),
       );
+      return;
     }
+
+    // Si la prematrícula se creó bien, construir mensaje y enviar correo
+    final mensaje = _construirMensajeResumen(
+      nombreEstudiante: usuario.nombre,
+      carrera: carrera,
+      curso: curso,
+      periodo: periodoTexto,
+      observaciones: observacionesController.text.trim(),
+    );
+
+    final correoOk = await notificacionesController.enviarCorreo(
+      emailDestino: emailDestino,
+      asunto: 'Prematrícula Realizada con Exito',
+      mensaje: mensaje,
+    );
+
+    enviando.value = false;
+
+    if (correoOk) {
+      Get.snackbar(
+        '✅ Solicitud Enviada',
+        'Tu solicitud de pre-matrícula para $curso ha sido registrada y se ha enviado un correo de confirmación.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade600,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+    } else {
+      Get.snackbar(
+        '⚠️ Prematrícula creada',
+        'La prematrícula se registró, pero no se pudo enviar el correo de confirmación.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange.shade700,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+    }
+
+    limpiarFormulario();
   }
 }
 
@@ -287,6 +358,23 @@ class NuevaPrematriculaScreen extends StatelessWidget {
                 controller: controller.periodoController,
                 label: "Período (Ej: 2026-1 o ID numérico)",
                 icon: Icons.calendar_today,
+              ),
+              const SizedBox(height: 16),
+
+              // --- CAMPO EMAIL DE NOTIFICACIÓN ---
+              _buildTextField(
+                controller: controller.emailNotificacionController,
+                label: "Correo para notificación",
+                icon: Icons.email,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Este campo (Correo para notificación) es obligatorio.';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Ingresa un correo válido.';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
 

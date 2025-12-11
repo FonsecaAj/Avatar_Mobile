@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:modulo_mobil/controllers/LoginController.dart';
-import 'package:modulo_mobil/models/prematricula_request.dart';
+import 'package:modulo_mobil/models/nueva_prematricula_response.dart';
 import 'package:modulo_mobil/services/prematricula_service.dart';
 
 class NuevaPrematriculaController extends GetxController {
