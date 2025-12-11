@@ -28,7 +28,7 @@ class MisCursosController extends GetxController {
     final cedula = loginController.usuarioActual.value?.identificacion ?? "";
 
     final data = await cursosService.obtenerMisCursos(cedula);
-    cursos.assignAll(data);
+    cursos.assignAll(data ?? []);
 
     _aplicarFiltro();
     cargando.value = false;

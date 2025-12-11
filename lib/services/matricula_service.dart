@@ -15,13 +15,17 @@ class MatriculaApiService {
       'https://tiusr20pl.cuc-carrera-ti.ac.cr/gateway/api/matricula';
 
 
+      static const String _baseUrlMontse =
+      'https://tiusr20pl.cuc-carrera-ti.ac.cr/APIMAT2';
+
+
 // ================== LOOKUPS ==================
   Future<MatriculaLookups?> obtenerLookups() async {
     print('===== INICIO obtenerLookups =====');
     try {
       final token = await loginService.obtenerAccessToken();
 
-      final url = Uri.parse("$_baseUrl/api/matricula/lookups");
+      final url = Uri.parse("$_baseUrlMontse/api/matricula/lookups");
       print('URL obtenerLookups: $url');
 
       final resp = await client.get(
@@ -63,6 +67,7 @@ class MatriculaApiService {
     }
   }
 
+
 // ================== CREAR MATRÍCULA ==================
   Future<void> crearMatricula(MatriculaRequest request) async {
     print('===== INICIO crearMatricula =====');
@@ -70,7 +75,7 @@ class MatriculaApiService {
 
     try {
       final token = await loginService.obtenerAccessToken();
-      final url = Uri.parse("$_baseUrl/api/matricula");
+      final url = Uri.parse("$_baseUrlMontse/api/matricula");
 
       print('URL crearMatricula: $url');
       print('Body crearMatricula (toJson): ${request.toJson()}');
