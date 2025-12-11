@@ -5,7 +5,10 @@ import 'package:modulo_mobil/models/nueva_prematricula_response.dart';
 import 'package:modulo_mobil/services/loginService.dart';
 
 class PrematriculaService {
-  final String baseUrl = "https://tiusr20pl.cuc-carrera-ti.ac.cr/APIMAT1/api";
+  // Antes: https://tiusr20pl.cuc-carrera-ti.ac.cr/APIMAT1/api
+  // Ahora: base del API Gateway para prematrícula
+  final String baseUrl =
+      "https://tiusr20pl.cuc-carrera-ti.ac.cr/gateway/api";
   final loginService = LoginApiService();
 
   Future<Map<String, String>> _headers() async {
@@ -19,14 +22,16 @@ class PrematriculaService {
 
   Future<List<PrematriculaResponse>?> obtenerPrematricula(String cedula) async {
     try {
+      // Coincide con UpstreamPathTemplate: /api/prematricula/estudiante/{cedula}
       final url = Uri.parse("$baseUrl/prematricula/estudiante/$cedula");
       final resp = await http.get(url, headers: await _headers());
 
       if (resp.statusCode != 200) return [];
 
       final jsonResp = json.decode(resp.body);
-      final lista = jsonResp["responseObject"] as List;
+      if (jsonResp["responseObject"] == null) return [];
 
+      final lista = jsonResp["responseObject"] as List;
       return lista.map((e) => PrematriculaResponse.fromJson(e)).toList();
     } catch (e) {
       print("Error prematrícula: $e");
@@ -37,6 +42,7 @@ class PrematriculaService {
   /// Nuevo: crear/enviar una prematrícula
   Future<bool> crearPrematricula(PrematriculaRequest data) async {
     try {
+      // Coincide con UpstreamPathTemplate: /api/prematricula
       final url = Uri.parse("$baseUrl/prematricula");
 
       final resp = await http.post(
@@ -45,11 +51,7 @@ class PrematriculaService {
         body: jsonEncode(data.toJson()),
       );
 
-      // Ajusta esta lógica según cómo responda exactamente tu API
       if (resp.statusCode == 200 || resp.statusCode == 201) {
-        // Opcional: podrías parsear el body si devuelve la prematrícula creada
-        // final jsonResp = jsonDecode(resp.body);
-        // ...
         return true;
       } else {
         print("Error crearPrematricula: ${resp.statusCode} -> ${resp.body}");

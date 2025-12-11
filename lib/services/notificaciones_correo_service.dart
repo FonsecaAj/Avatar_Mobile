@@ -7,19 +7,20 @@ class NotificacionesApiService {
   final client = http.Client();
   final loginService = LoginApiService();
 
-  // URL base proporcionada
+  // Antes: https://tiusr20pl.cuc-carrera-ti.ac.cr/ipn3notificaciones
+  // Ahora: base del API Gateway para notificaciones
   static const String _baseUrl =
-      'https://tiusr20pl.cuc-carrera-ti.ac.cr/ipn3notificaciones';
+      'https://tiusr20pl.cuc-carrera-ti.ac.cr/gateway/api/notificaciones';
 
   /// Endpoint: Enviar notificación por correo
   ///
-  /// URL: https://tiusr20pl.cuc-carrera-ti.ac.cr/ipn3notificaciones/api/notificar
+  /// URL final: https://tiusr20pl.cuc-carrera-ti.ac.cr/gateway/api/notificaciones/notificar
   Future<bool> enviarNotificacionEmail(NotificacionEmailRequest data) async {
     // 1. Obtener el token de acceso (mismo patrón que en otros servicios)
     final token = await loginService.obtenerAccessToken();
 
-    // 2. Construir la URL completa
-    final url = Uri.parse("$_baseUrl/api/notificar");
+    // 2. Construir la URL completa (coincide con UpstreamPathTemplate)
+    final url = Uri.parse("$_baseUrl/notificar");
 
     // 3. Crear el body de la solicitud
     final body = jsonEncode(data.toJson());
@@ -38,7 +39,6 @@ class NotificacionesApiService {
 
       // 5. Verificar el código de estado
       if (resp.statusCode == 200 || resp.statusCode == 201) {
-        // Opcional: puedes inspeccionar resp.body si la API devuelve un mensaje
         return true;
       } else {
         print(

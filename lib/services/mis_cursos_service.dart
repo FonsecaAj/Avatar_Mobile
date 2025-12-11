@@ -9,13 +9,16 @@ class CursosService {
   final client = http.Client();
   final loginService = LoginApiService();
 
-  Future<List<CursoResponse>> obtenerMisCursos(String cedula) async {
-    if (cedula.isEmpty) return [];
+  // Base del API Gateway
+  static const String _gatewayBaseUrl =
+      "https://tiusr20pl.cuc-carrera-ti.ac.cr/gateway";
 
+  Future<List<CursoResponse>?> obtenerMisCursos(String cedula) async {
     final token = await loginService.obtenerAccessToken();
 
+    // Coincide con UpstreamPathTemplate: /api/curso/miscursos
     final url = Uri.parse(
-      "https://tiusr20pl.cuc-carrera-ti.ac.cr/APIACD3/api/curso/miscursos?id=$cedula",
+      "$_gatewayBaseUrl/api/curso/miscursos?id=$cedula",
     );
 
     print('===== INICIO obtenerMisCursos =====');
