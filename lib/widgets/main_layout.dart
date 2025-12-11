@@ -220,26 +220,28 @@ class MainLayout extends StatelessWidget {
               ),
             ],
             onSelected: (value) async {
-              if (value == 'perfil') {
-                NotificationService.showInfo('Función próximamente');
-              } else if (value == 'logout') {
-                final confirmed = await NotificationService.showConfirmDialog(
-                  title: 'Cerrar Sesión',
-                  message: '¿Estás seguro que deseas cerrar sesión?',
-                  confirmText: 'Sí, cerrar',
-                  cancelText: 'Cancelar',
-                );
-
-
-                if (confirmed) {
-                  await loginController.logout();
-                  Get.offAllNamed('/login');
-                  NotificationService.showSuccess(
-                    'Sesión cerrada exitosamente',
+               if (value == 'perfil') {
+                  // Navegar al screen de perfil
+                  if (currentIndex != 4) {
+                    Get.toNamed('/perfil');
+                  }
+                } else if (value == 'logout') {
+                  final confirmed = await NotificationService.showConfirmDialog(
+                    title: 'Cerrar Sesión',
+                    message: '¿Estás seguro que deseas cerrar sesión?',
+                    confirmText: 'Sí, cerrar',
+                    cancelText: 'Cancelar',
                   );
+
+                  if (confirmed) {
+                    await loginController.logout();
+                    Get.offAllNamed('/login');
+                    NotificationService.showSuccess(
+                      'Sesión cerrada exitosamente',
+                    );
+                  }
                 }
-              }
-            },
+              },
           );
         }),
       ],
